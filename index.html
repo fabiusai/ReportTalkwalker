@@ -1039,106 +1039,59 @@
             channelCounts[channel] = (channelCounts[channel] || 0) + 1;
         });
 
-        const sortedChannels = Object.entries(channelCounts).sort(([,a], [,b]) => b - a);
+        const sortedChannels = Object.entries(channelCounts)
+            .sort(([,a], [,b]) => b - a);
+        
         const channels = sortedChannels.map(([channel]) => channel);
         const values = sortedChannels.map(([,count]) => count);
 
         const container = document.querySelector('#channelChart');
         const maxValue = Math.max(...values);
-        
-        // Configurazione responsive
-        const barWidth = 85;
-        const barSpacing = 45;
-        const chartHeight = 320;
-        const chartPadding = 60;
-        const totalWidth = channels.length * (barWidth + barSpacing) - barSpacing;
-        const svgWidth = Math.max(500, totalWidth + (chartPadding * 2));
-        
-        // Colori aziendali
-        const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1', '#17a2b8'];
+        const barWidth = 70;
+        const barSpacing = 30;
+        const chartHeight = 280;
+        const chartPadding = 40;
+        const totalBarsWidth = channels.length * barWidth + (channels.length - 1) * barSpacing;
+        const chartWidth = Math.max(450, totalBarsWidth + (chartPadding * 2));
+        const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1'];
 
-        const startX = (svgWidth - totalWidth) / 2;
-
-        let chartSVG = `
-            <svg width="${svgWidth}" height="${chartHeight}" viewBox="0 0 ${svgWidth} ${chartHeight}" xmlns="http://www.w3.org/2000/svg">
+        let svgContent = `
+            <svg width="${chartWidth}" height="${chartHeight + 70}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
-                    <linearGradient id="barGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#4da6ff;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#003d82;stop-opacity:1" />
-                    </linearGradient>
-                    <linearGradient id="barGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#66b3ff;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
-                    </linearGradient>
-                    <linearGradient id="barGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#ffeb3b;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#ffd100;stop-opacity:1" />
-                    </linearGradient>
                     <style>
-                        .chart-bar { 
-                            cursor: pointer;
-                            transition: all 0.3s ease; 
-                        }
-                        .chart-bar:hover { 
-                            transform: translateY(-3px);
-                            filter: brightness(1.1);
-                        }
-                        .chart-value { 
-                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
-                            font-size: 16px; 
-                            font-weight: bold; 
-                            fill: #003d82; 
-                            text-anchor: middle;
-                        }
-                        .chart-label { 
-                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
-                            font-size: 13px; 
-                            font-weight: 500; 
-                            fill: #003d82; 
-                            text-anchor: middle;
-                        }
-                        .chart-icon { 
-                            transition: transform 0.3s ease; 
-                        }
-                        .chart-bar:hover + .chart-icon { 
-                            transform: scale(1.1); 
-                        }
+                        .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #003d82; font-weight: normal; text-anchor: middle; }
+                        .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: bold; text-anchor: middle; }
+                        .chart-bar { transition: all 0.3s ease; }
+                        .chart-bar:hover { opacity: 0.8; transform: translateY(-2px); }
                     </style>
                 </defs>`;
 
-        channels.forEach((channel, index) => {
-            const barHeight = Math.max((values[index] / maxValue) * 200, 25);
-            const x = startX + index * (barWidth + barSpacing);
-            const y = chartHeight - barHeight - 60;
+        const startX = (chartWidth - totalBarsWidth) / 2;
 
-            const gradientId = `barGradient${(index % 3) + 1}`;
-            
-            chartSVG += `
-                <g class="bar-group">
-                    <rect class="chart-bar" 
-                          x="${x}" y="${y}" 
-                          width="${barWidth}" height="${barHeight}" 
-                          fill="url(#${gradientId})" 
-                          rx="8" ry="8"
-                          stroke="rgba(255,255,255,0.3)" 
-                          stroke-width="1"/>
-                    
-                    <text x="${x + barWidth/2}" y="${y - 12}" class="chart-value">
-                        ${values[index]}
-                    </text>
-                    
-                    <g class="chart-icon" transform="translate(${x + barWidth/2 - 12}, ${chartHeight - 45})">
-                        ${getChannelIconSVG(channel, 0, 0, 24)}
-                    </g>
-                    
-                    <text x="${x + barWidth/2}" y="${chartHeight - 15}" class="chart-label">
-                        ${channel}
-                    </text>
-                </g>`;
+        channels.forEach((channel, index) => {
+            const barHeight = Math.max((values[index] / maxValue) * 180, 20);
+            const x = startX + index * (barWidth + barSpacing);
+            const y = chartHeight - barHeight - 35;
+
+            // Barra principale
+            svgContent += `
+                <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" 
+                      fill="${colors[index % colors.length]}" rx="4" ry="4"/>
+                <text x="${x + barWidth/2}" y="${y - 8}" class="chart-value">
+                    ${values[index]}
+                </text>`;
+
+            // Icona e label
+            const iconY = chartHeight - 25;
+            svgContent += `
+                ${getChannelIconSVG(channel, x + barWidth/2 - 8, iconY - 16, 16)}
+                <text x="${x + barWidth/2}" y="${iconY + 15}" class="chart-label">
+                    ${channel}
+                </text>`;
         });
 
-        chartSVG += '</svg>';
-        container.innerHTML = chartSVG;
+        svgContent += '</svg>';
+        container.innerHTML = svgContent;
     }
 
     function generateSentimentChart() {
@@ -1157,35 +1110,11 @@
         const negativePerc = total > 0 ? Math.round((sentiments.negative / total) * 100) : 0;
 
         const container = document.getElementById('sentimentContainer');
-        
-        // Configurazione del grafico
-        const svgSize = 400;
+        const svgSize = 380;
+        const chartRadius = 90;
+        const innerRadius = 50;
         const centerX = svgSize / 2;
-        const centerY = svgSize / 2 - 30;
-        const outerRadius = 110;
-        const innerRadius = 65;
-
-        // Dati per il grafico
-        const colors = ['#28a745', '#ffc107', '#dc3545'];
-        const labels = ['Positivo', 'Neutro', 'Negativo'];
-        const values = [positivePerc, neutralPerc, negativePerc];
-
-        function createArcPath(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle) {
-            const start = polarToCartesian(centerX, centerY, outerRadius, endAngle);
-            const end = polarToCartesian(centerX, centerY, outerRadius, startAngle);
-            const innerStart = polarToCartesian(centerX, centerY, innerRadius, endAngle);
-            const innerEnd = polarToCartesian(centerX, centerY, innerRadius, startAngle);
-            
-            const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-            
-            return [
-                "M", start.x, start.y, 
-                "A", outerRadius, outerRadius, 0, largeArcFlag, 0, end.x, end.y,
-                "L", innerEnd.x, innerEnd.y,
-                "A", innerRadius, innerRadius, 0, largeArcFlag, 1, innerStart.x, innerStart.y,
-                "Z"
-            ].join(" ");
-        }
+        const centerY = svgSize / 2 - 20;
 
         function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
             const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
@@ -1195,113 +1124,99 @@
             };
         }
 
-        let sentimentSVG = `
-            <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" xmlns="http://www.w3.org/2000/svg">
+        const colors = ['#28a745', '#ffc107', '#dc3545'];
+        const labels = ['Positivo', 'Neutro', 'Negativo'];
+        const values = [positivePerc, neutralPerc, negativePerc];
+
+        let svgContent = `
+            <svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
-                    <filter id="donutShadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
-                        <feOffset dx="2" dy="2" result="offset"/>
-                        <feComponentTransfer>
-                            <feFuncA type="linear" slope="0.2"/>
-                        </feComponentTransfer>
-                        <feMerge> 
-                            <feMergeNode/>
-                            <feMergeNode in="SourceGraphic"/> 
-                        </feMerge>
-                    </filter>
                     <style>
-                        .sentiment-segment {
-                            cursor: pointer;
+                        .sentiment-value { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 14px; 
+                            fill: white; 
+                            font-weight: bold; 
+                            text-anchor: middle; 
+                        }
+                        .legend-item { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 12px; 
+                            fill: #333; 
+                            font-weight: 500;
+                        }
+                        .legend-perc { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 11px; 
+                            fill: #666; 
+                        }
+                        .donut-segment {
                             transition: all 0.3s ease;
-                            filter: url(#donutShadow);
                         }
-                        .sentiment-segment:hover {
-                            transform: scale(1.05);
-                            filter: brightness(1.1) url(#donutShadow);
-                        }
-                        .sentiment-text {
-                            font-family: 'Avenir Next LT Pro', Arial, sans-serif;
-                            font-size: 16px;
-                            font-weight: bold;
-                            fill: white;
-                            text-anchor: middle;
-                            pointer-events: none;
-                        }
-                        .legend-circle {
-                            transition: all 0.3s ease;
-                        }
-                        .legend-circle:hover {
-                            transform: scale(1.2);
-                        }
-                        .legend-text {
-                            font-family: 'Avenir Next LT Pro', Arial, sans-serif;
-                            font-size: 14px;
-                            font-weight: 600;
-                            fill: #333;
-                        }
-                        .legend-percentage {
-                            font-family: 'Avenir Next LT Pro', Arial, sans-serif;
-                            font-size: 12px;
-                            fill: #666;
+                        .donut-segment:hover {
+                            filter: brightness(1.1);
                         }
                     </style>
                 </defs>`;
 
         let currentAngle = 0;
-        
         values.forEach((value, index) => {
             if (value > 0) {
                 const segmentAngle = (value / 100) * 360;
+                const startAngle = currentAngle;
                 const endAngle = currentAngle + segmentAngle;
                 
-                const pathData = createArcPath(centerX, centerY, innerRadius, outerRadius, currentAngle, endAngle);
+                const outerStart = polarToCartesian(centerX, centerY, chartRadius, startAngle);
+                const outerEnd = polarToCartesian(centerX, centerY, chartRadius, endAngle);
+                const innerStart = polarToCartesian(centerX, centerY, innerRadius, startAngle);
+                const innerEnd = polarToCartesian(centerX, centerY, innerRadius, endAngle);
                 
-                sentimentSVG += `
-                    <path class="sentiment-segment" 
-                          d="${pathData}" 
-                          fill="${colors[index]}" 
-                          stroke="white" 
-                          stroke-width="3"/>`;
+                const largeArc = segmentAngle > 180 ? 1 : 0;
+                
+                const pathData = [
+                    `M ${outerStart.x} ${outerStart.y}`,
+                    `A ${chartRadius} ${chartRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+                    `L ${innerEnd.x} ${innerEnd.y}`,
+                    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+                    'Z'
+                ].join(' ');
+                
+                svgContent += `<path class="donut-segment" d="${pathData}" fill="${colors[index]}" stroke="white" stroke-width="2"/>`;
 
-                // Aggiungi testo percentuale se il segmento è abbastanza grande
-                if (value >= 12) {
-                    const textAngle = currentAngle + (segmentAngle / 2);
-                    const textRadius = (outerRadius + innerRadius) / 2;
-                    const textPos = polarToCartesian(centerX, centerY, textRadius, textAngle);
-                    
-                    sentimentSVG += `
-                        <text x="${textPos.x}" y="${textPos.y + 5}" class="sentiment-text">
+                // Aggiungi percentuale se il segmento è abbastanza grande
+                if (value > 10) {
+                    const midAngle = startAngle + segmentAngle / 2;
+                    const textRadius = (chartRadius + innerRadius) / 2;
+                    const textPos = polarToCartesian(centerX, centerY, textRadius, midAngle);
+                    svgContent += `
+                        <text x="${textPos.x}" y="${textPos.y + 4}" class="sentiment-value">
                             ${value}%
                         </text>`;
                 }
                 
-                currentAngle = endAngle;
+                currentAngle += segmentAngle;
             }
         });
 
-        // Legenda orizzontale
-        const legendY = svgSize - 80;
-        const legendSpacing = 120;
+        // Legenda orizzontale sotto il grafico
+        const legendY = svgSize - 60;
+        const legendSpacing = 110;
         const legendStartX = (svgSize - (labels.length * legendSpacing)) / 2;
         
         labels.forEach((label, index) => {
-            if (values[index] > 0) {
-                const legendX = legendStartX + (index * legendSpacing);
-                sentimentSVG += `
-                    <circle class="legend-circle" 
-                            cx="${legendX + 10}" cy="${legendY}" r="8" 
-                            fill="${colors[index]}"/>
-                    <text x="${legendX + 25}" y="${legendY - 5}" class="legend-text">
-                        ${label}
-                    </text>
-                    <text x="${legendX + 25}" y="${legendY + 10}" class="legend-percentage">
-                        ${values[index]}%
-                    </text>`;
-            }
+            const legendX = legendStartX + (index * legendSpacing);
+            svgContent += `
+                <circle cx="${legendX + 8}" cy="${legendY}" r="6" fill="${colors[index]}"/>
+                <text x="${legendX + 20}" y="${legendY - 5}" class="legend-item">
+                    ${label}
+                </text>
+                <text x="${legendX + 20}" y="${legendY + 8}" class="legend-perc">
+                    ${values[index]}%
+                </text>`;
         });
 
-        sentimentSVG += '</svg>';
-        container.innerHTML = sentimentSVG;
+        svgContent += '</svg>';
+        container.innerHTML = svgContent;
     }
 
     function generateReport() {
@@ -1676,109 +1591,6 @@
                             <td>${item.publishedDateFormatted}</td>
                             <td class="content-cell text-left">${item.content}</td>
                             <td>${formatTableValue(item.followers)}</td>
-                            <td>${formatTableValue(item.comments)}</td>
-                            <td>${formatTableValue(item.likes)}</td>
-                            <td>${formatTableValue(item.shares)}</td>
-                            <td class="link-cell"><a href="${item.url}" target="_blank" rel="noopener">Link</a></td>
-                        </tr>`;
-                });
-
-                tableHTML += `
-                        </tbody>
-                    </table>`;
-
-                const argomento = document.getElementById('argomento').value || 'report';
-                const resultsElement = document.getElementById('results');
-                
-                // Clone the results content
-                const resultsClone = resultsElement.cloneNode(true);
-                
-                // Remove export section and table controls
-                const exportSection = resultsClone.querySelector('.card:last-child');
-                if (exportSection) exportSection.remove();
-                
-                const tableControls = resultsClone.querySelector('.table-controls');
-                if (tableControls) tableControls.remove();
-
-                // Replace table with current view
-                const tableWrapper = resultsClone.querySelector('.table-wrapper');
-                if (tableWrapper) {
-                    tableWrapper.innerHTML = tableHTML;
-                }
-
-                // CRITICAL: Force regenerate and capture both charts
-                const originalChannelChart = document.querySelector('#channelChart');
-                const originalSentimentChart = document.querySelector('#sentimentContainer');
-                
-                // Get the actual SVG content
-                let channelChartSVG = '';
-                let sentimentChartSVG = '';
-                
-                if (originalChannelChart && originalChannelChart.querySelector('svg')) {
-                    channelChartSVG = originalChannelChart.innerHTML;
-                }
-                
-                if (originalSentimentChart && originalSentimentChart.querySelector('svg')) {
-                    sentimentChartSVG = originalSentimentChart.innerHTML;
-                }
-
-                // Ensure both charts are in the cloned content
-                const clonedChannelChart = resultsClone.querySelector('#channelChart');
-                const clonedSentimentChart = resultsClone.querySelector('#sentimentContainer');
-                
-                if (clonedChannelChart) {
-                    clonedChannelChart.innerHTML = channelChartSVG;
-                }
-                
-                if (clonedSentimentChart) {
-                    clonedSentimentChart.innerHTML = sentimentChartSVG;
-                }
-
-                // Verify charts are present
-                console.log('Channel chart present:', !!clonedChannelChart?.innerHTML);
-                console.log('Sentiment chart present:', !!clonedSentimentChart?.innerHTML);
-
-                const htmlContent = `<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Talkwalker - ${argomento}</title>
-    <style>
-        ${document.querySelector('style').innerHTML}
-        .header { display: none; }
-        .upload-section { display: none; }
-        .data-table th { cursor: default; user-select: auto; }
-        .data-table th::after { display: none; }
-        .data-table th:hover { background: linear-gradient(135deg, var(--light-blue), #f0f8ff); }
-        .charts-row { page-break-inside: avoid; }
-        .card { page-break-inside: avoid; margin-bottom: 20px; }
-        @media print {
-            .card { break-inside: avoid; }
-            .charts-row { break-inside: avoid; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        ${resultsClone.innerHTML}
-    </div>
-</body>
-</html>`;
-
-                downloadFile(htmlContent, `report-talkwalker-${argomento.replace(/\s+/g, '-').toLowerCase()}.html`, 'text/html');
-                button.innerHTML = '✅ Completato';
-            } catch (error) {
-                console.error('Errore esportazione HTML:', error);
-                button.innerHTML = '❌ Errore';
-            } finally {
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }, 2000);
-            }
-        }, 500);
-    }(item.followers)}</td>
                             <td>${formatTableValue(item.comments)}</td>
                             <td>${formatTableValue(item.likes)}</td>
                             <td>${formatTableValue(item.shares)}</td>
