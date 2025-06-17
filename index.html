@@ -1047,41 +1047,44 @@
 
         const container = document.querySelector('#channelChart');
         const maxValue = Math.max(...values);
-        const barWidth = 80;
-        const barSpacing = 40;
-        const chartHeight = 300;
+        const barWidth = 70;
+        const barSpacing = 30;
+        const chartHeight = 280;
+        const chartPadding = 40;
         const totalBarsWidth = channels.length * barWidth + (channels.length - 1) * barSpacing;
-        const chartWidth = Math.max(500, totalBarsWidth + 80);
+        const chartWidth = Math.max(450, totalBarsWidth + (chartPadding * 2));
         const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1'];
 
         let svgContent = `
-            <svg width="${chartWidth}" height="${chartHeight + 80}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
+            <svg width="${chartWidth}" height="${chartHeight + 70}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
                     <style>
-                        .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: normal; text-anchor: middle; }
-                        .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: #003d82; font-weight: bold; text-anchor: middle; }
-                        .chart-bar { transition: opacity 0.3s ease; }
-                        .chart-bar:hover { opacity: 0.8; }
+                        .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #003d82; font-weight: normal; text-anchor: middle; }
+                        .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: bold; text-anchor: middle; }
+                        .chart-bar { transition: all 0.3s ease; }
+                        .chart-bar:hover { opacity: 0.8; transform: translateY(-2px); }
                     </style>
                 </defs>`;
 
         const startX = (chartWidth - totalBarsWidth) / 2;
 
         channels.forEach((channel, index) => {
-            const barHeight = (values[index] / maxValue) * 200;
+            const barHeight = Math.max((values[index] / maxValue) * 180, 20);
             const x = startX + index * (barWidth + barSpacing);
-            const y = chartHeight - barHeight - 50;
+            const y = chartHeight - barHeight - 35;
 
+            // Barra principale
             svgContent += `
                 <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" 
-                      fill="${colors[index % colors.length]}" rx="6"/>
-                <text x="${x + barWidth/2}" y="${y - 10}" class="chart-value">
+                      fill="${colors[index % colors.length]}" rx="4" ry="4"/>
+                <text x="${x + barWidth/2}" y="${y - 8}" class="chart-value">
                     ${values[index]}
                 </text>`;
 
-            const iconY = chartHeight - 30;
+            // Icona e label
+            const iconY = chartHeight - 25;
             svgContent += `
-                ${getChannelIconSVG(channel, x + barWidth/2 - 10, iconY - 20, 20)}
+                ${getChannelIconSVG(channel, x + barWidth/2 - 8, iconY - 16, 16)}
                 <text x="${x + barWidth/2}" y="${iconY + 15}" class="chart-label">
                     ${channel}
                 </text>`;
@@ -1107,12 +1110,11 @@
         const negativePerc = total > 0 ? Math.round((sentiments.negative / total) * 100) : 0;
 
         const container = document.getElementById('sentimentContainer');
-        const svgSize = 400;
-        const chartSize = 250;
-        const centerX = chartSize / 2;
-        const centerY = chartSize / 2;
-        const radius = 100;
-        const innerRadius = 60;
+        const svgSize = 380;
+        const chartRadius = 90;
+        const innerRadius = 50;
+        const centerX = svgSize / 2;
+        const centerY = svgSize / 2 - 20;
 
         function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
             const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
@@ -1130,12 +1132,32 @@
             <svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
                     <style>
-                        .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: white; font-weight: bold; text-anchor: middle; }
-                        .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 13px; fill: #333; }
-                        .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 11px; fill: #666; }
+                        .sentiment-value { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 14px; 
+                            fill: white; 
+                            font-weight: bold; 
+                            text-anchor: middle; 
+                        }
+                        .legend-item { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 12px; 
+                            fill: #333; 
+                            font-weight: 500;
+                        }
+                        .legend-perc { 
+                            font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                            font-size: 11px; 
+                            fill: #666; 
+                        }
+                        .donut-segment {
+                            transition: all 0.3s ease;
+                        }
+                        .donut-segment:hover {
+                            filter: brightness(1.1);
+                        }
                     </style>
-                </defs>
-                <g transform="translate(${(svgSize - chartSize) / 2}, 20)">`;
+                </defs>`;
 
         let currentAngle = 0;
         values.forEach((value, index) => {
@@ -1144,8 +1166,8 @@
                 const startAngle = currentAngle;
                 const endAngle = currentAngle + segmentAngle;
                 
-                const outerStart = polarToCartesian(centerX, centerY, radius, startAngle);
-                const outerEnd = polarToCartesian(centerX, centerY, radius, endAngle);
+                const outerStart = polarToCartesian(centerX, centerY, chartRadius, startAngle);
+                const outerEnd = polarToCartesian(centerX, centerY, chartRadius, endAngle);
                 const innerStart = polarToCartesian(centerX, centerY, innerRadius, startAngle);
                 const innerEnd = polarToCartesian(centerX, centerY, innerRadius, endAngle);
                 
@@ -1153,20 +1175,21 @@
                 
                 const pathData = [
                     `M ${outerStart.x} ${outerStart.y}`,
-                    `A ${radius} ${radius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+                    `A ${chartRadius} ${chartRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
                     `L ${innerEnd.x} ${innerEnd.y}`,
                     `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
                     'Z'
                 ].join(' ');
                 
-                svgContent += `<path d="${pathData}" fill="${colors[index]}" stroke="white" stroke-width="2"/>`;
+                svgContent += `<path class="donut-segment" d="${pathData}" fill="${colors[index]}" stroke="white" stroke-width="2"/>`;
 
-                if (value > 8) {
+                // Aggiungi percentuale se il segmento è abbastanza grande
+                if (value > 10) {
                     const midAngle = startAngle + segmentAngle / 2;
-                    const textRadius = (radius + innerRadius) / 2;
+                    const textRadius = (chartRadius + innerRadius) / 2;
                     const textPos = polarToCartesian(centerX, centerY, textRadius, midAngle);
                     svgContent += `
-                        <text x="${textPos.x}" y="${textPos.y + 5}" class="sentiment-value">
+                        <text x="${textPos.x}" y="${textPos.y + 4}" class="sentiment-value">
                             ${value}%
                         </text>`;
                 }
@@ -1175,22 +1198,19 @@
             }
         });
 
-        svgContent += '</g>';
-
-        // Legenda compatta sotto il grafico
-        const legendY = chartSize + 60;
-        const legendItemWidth = 120;
-        const totalLegendWidth = labels.length * legendItemWidth;
-        const legendStartX = (svgSize - totalLegendWidth) / 2;
+        // Legenda orizzontale sotto il grafico
+        const legendY = svgSize - 60;
+        const legendSpacing = 110;
+        const legendStartX = (svgSize - (labels.length * legendSpacing)) / 2;
         
         labels.forEach((label, index) => {
-            const legendX = legendStartX + (index * legendItemWidth);
+            const legendX = legendStartX + (index * legendSpacing);
             svgContent += `
-                <circle cx="${legendX + 12}" cy="${legendY}" r="7" fill="${colors[index]}"/>
-                <text x="${legendX + 25}" y="${legendY - 6}" class="legend-item">
+                <circle cx="${legendX + 8}" cy="${legendY}" r="6" fill="${colors[index]}"/>
+                <text x="${legendX + 20}" y="${legendY - 5}" class="legend-item">
                     ${label}
                 </text>
-                <text x="${legendX + 25}" y="${legendY + 6}" class="legend-label">
+                <text x="${legendX + 20}" y="${legendY + 8}" class="legend-perc">
                     ${values[index]}%
                 </text>`;
         });
@@ -1373,18 +1393,18 @@
                 }
 
                 const svgContent = `
-                    <svg width="600" height="450" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="550" height="400" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <style>
-                                .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: normal; text-anchor: middle; }
-                                .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: #003d82; font-weight: bold; text-anchor: middle; }
-                                .chart-bar { transition: opacity 0.3s ease; }
+                                .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #003d82; font-weight: normal; text-anchor: middle; }
+                                .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: bold; text-anchor: middle; }
+                                .chart-bar { transition: all 0.3s ease; }
                                 .chart-bar:hover { opacity: 0.8; }
-                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
+                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 20px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                             </style>
                         </defs>
-                        <text x="300" y="30" class="title-text">POST PER CANALE</text>
-                        <g transform="translate(50, 60)">
+                        <text x="275" y="25" class="title-text">POST PER CANALE</text>
+                        <g transform="translate(40, 45)">
                             ${channelSVG.innerHTML}
                         </g>
                     </svg>`;
@@ -1419,17 +1439,35 @@
                 }
 
                 const svgContent = `
-                    <svg width="450" height="450" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="420" height="420" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <style>
-                                .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: white; font-weight: bold; text-anchor: middle; }
-                                .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 13px; fill: #333; }
-                                .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 11px; fill: #666; }
-                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
+                                .sentiment-value { 
+                                    font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                                    font-size: 14px; 
+                                    fill: white; 
+                                    font-weight: bold; 
+                                    text-anchor: middle; 
+                                }
+                                .legend-item { 
+                                    font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                                    font-size: 12px; 
+                                    fill: #333; 
+                                    font-weight: 500;
+                                }
+                                .legend-perc { 
+                                    font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
+                                    font-size: 11px; 
+                                    fill: #666; 
+                                }
+                                .donut-segment {
+                                    transition: all 0.3s ease;
+                                }
+                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 20px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                             </style>
                         </defs>
-                        <text x="225" y="30" class="title-text">ANALISI DEL SENTIMENT</text>
-                        <g transform="translate(25, 60)">
+                        <text x="210" y="25" class="title-text">ANALISI DEL SENTIMENT</text>
+                        <g transform="translate(20, 45)">
                             ${sentimentSVG.innerHTML}
                         </g>
                     </svg>`;
@@ -1583,30 +1621,19 @@
                     tableWrapper.innerHTML = tableHTML;
                 }
 
-                // Get the charts content for HTML export including inline SVG
+                // Assicurati che entrambi i grafici siano inclusi nell'HTML esportato
                 const channelChartElement = document.querySelector('#channelChart svg');
                 const sentimentChartElement = document.querySelector('#sentimentContainer svg');
                 
-                let channelChartHTML = '';
-                let sentimentChartHTML = '';
-                
-                if (channelChartElement) {
-                    channelChartHTML = channelChartElement.outerHTML;
-                }
-                
-                if (sentimentChartElement) {
-                    sentimentChartHTML = sentimentChartElement.outerHTML;
-                }
-                
                 // Update charts in clone with complete SVG
                 const channelChartClone = resultsClone.querySelector('#channelChart');
-                if (channelChartClone && channelChartHTML) {
-                    channelChartClone.innerHTML = channelChartHTML;
+                if (channelChartClone && channelChartElement) {
+                    channelChartClone.innerHTML = channelChartElement.outerHTML;
                 }
                 
                 const sentimentChartClone = resultsClone.querySelector('#sentimentContainer');
-                if (sentimentChartClone && sentimentChartHTML) {
-                    sentimentChartClone.innerHTML = sentimentChartHTML;
+                if (sentimentChartClone && sentimentChartElement) {
+                    sentimentChartClone.innerHTML = sentimentChartElement.outerHTML;
                 }
 
                 const htmlContent = `<!DOCTYPE html>
