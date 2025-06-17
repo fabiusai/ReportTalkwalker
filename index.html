@@ -549,7 +549,7 @@
                 </div>
             </div>
             
-            <button class="btn" id="generateBtn" onclick="generateReport()" disabled>
+            <button class="btn" id="generateBtn" onclick="generateReport()">
                 🚀 Genera Report
             </button>
         </div>
@@ -1798,6 +1798,66 @@ const htmlContent = `<!DOCTYPE html>
     });
 
     console.log('🚀 Talkwalker Report Generator caricato con successo!');
+
+    /**
+     * Esporta la pagina in HTML statico contenendo SOLO:
+     *  1) Titolo “Analisi social …”
+     *  2) Card “Metriche Generali”
+     *  3) Rigone con i grafici “Post per Canale” e “Analisi del Sentiment”
+     *  4) Card “Post di Maggiore Rilievo” con il numero di righe attualmente mostrato
+     *
+     * Non viene incluso nient’altro (upload, pulsanti, card di esportazione, script ecc.).
+     */
+    function exportHTML () {
+      /* --- 1. Verifiche preliminari ---------------------------------------- */
+      const resultsEl = document.getElementById('results');
+      if (!resultsEl || resultsEl.style.display === 'none') {
+        alert('Prima genera il report, poi potrai esportarlo.');
+        return;
+      }
+
+      /* --- 2. Clona SOLO la sezione già popolata --------------------------- */
+      const exportRoot = resultsEl.cloneNode(true);         // clona senza toccare il DOM vivo
+
+      /* 2a. Elimina la card “Esportazione Dati” (non deve comparire) */
+      const cards = Array.from(exportRoot.querySelectorAll('.card'));
+      cards.forEach(card => {
+        const header = card.querySelector('.card-header');
+        if (header && /esportazione dati/i.test(header.textContent)) {
+          card.remove();          // rimuove l’intera card
+        }
+      });
+
+      /* 2b. Rimuovi eventuali script annidati (in HTML statico non servono) */
+      exportRoot.querySelectorAll('script').forEach(s => s.remove());
+
+      /* --- 3. Recupera lo stile (font + CSS inline) ----------------------- */
+      const fontLink = document.querySelector('link[href*="fonts.googleapis.com"]')?.outerHTML || '';
+      const styleTag = document.querySelector('head > style')?.innerHTML || '';
+
+      /* --- 4. Costruisci la pagina minimale ------------------------------- */
+      const htmlString = `
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>${document.title} – Export</title>
+    ${fontLink}
+    <style>${styleTag}</style>
+  </head>
+  <body>
+    <div class="container">
+      ${exportRoot.innerHTML.trim()}
+    </div>
+  </body>
+</html>`.trim();
+
+      /* --- 5. Download ----------------------------------------------------- */
+      const timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      downloadFile(htmlString, `report_${timestamp}.html`, 'text/html');
+    }
+
 </script>
 </body>
 </html>
