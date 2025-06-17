@@ -298,6 +298,33 @@
             text-align: center;
             vertical-align: middle;
         }
+        .data-table td a{
+          color: var(--primary-blue);
+          text-decoration: underline dotted;
+          font-weight: 600;
+          position: relative;
+          transition: all .2s ease;
+        }
+
+        .data-table td a::after{
+          content: '↗';
+          font-size: .75em;
+          margin-left: .25rem;
+          opacity: 0;
+          transform: translateY(-2px);
+          transition: opacity .2s ease, transform .2s ease;
+        }
+
+        .data-table td a:hover{
+          background: var(--light-blue);
+          text-decoration-color: var(--secondary-blue);
+        }
+
+        .data-table td a:hover::after{
+          opacity: 1;
+          transform: translateY(0);
+        }
+
 
         .data-table th {
             background: linear-gradient(135deg, var(--light-blue), #f0f8ff);
@@ -428,18 +455,9 @@
             display: none;
         }
 
-        .link-cell a {
-            color: var(--primary-blue);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: background-color 0.2s ease;
-        }
+        
 
-        .link-cell a:hover {
-            background-color: var(--light-blue);
-        }
+        
 
         .sentiment-note {
             font-size: 0.85rem;
@@ -601,8 +619,7 @@
                                     <th class="sortable" onclick="sortTable(5)">Commenti</th>
                                     <th class="sortable" onclick="sortTable(6)">Like e Reazioni</th>
                                     <th class="sortable" onclick="sortTable(7)">Condivisioni</th>
-                                    <th>Link</th>
-                                </tr>
+</tr>
                             </thead>
                             <tbody>
                             </tbody>
@@ -1017,13 +1034,15 @@
                         ${item.profileDescription ? `<br/><span style="font-size: 0.85rem; color: #666; font-weight: normal;">${item.profileDescription}</span>` : ''}
                     </td>
                     <td class="channel-cell">${channelIconHTML}${item.channel}</td>
-                    <td>${item.publishedDateFormatted}</td>
+                    <td>
+${item.url ? `<a href="${item.url}" target="_blank" rel="noopener">${item.publishedDateFormatted}</a>` : item.publishedDateFormatted}
+</td>
                     <td class="content-cell text-left">${item.content}</td>
                     <td>${formatTableValue(item.followers)}</td>
                     <td>${formatTableValue(item.comments)}</td>
                     <td>${formatTableValue(item.likes)}</td>
                     <td>${formatTableValue(item.shares)}</td>
-                    <td class="link-cell"><a href="${item.url}" target="_blank" rel="noopener">Link</a></td>
+                    
                 </tr>
             `;
             tableHTML += tableRow;
@@ -1032,7 +1051,8 @@
         tableBody.innerHTML = tableHTML;
     }
 
-    function generateChannelChart() {
+    
+function generateChannelChart() {
         const channelCounts = {};
         currentData.forEach(row => {
             const channel = getChannelName(row.domain_url || '');
@@ -1040,59 +1060,65 @@
         });
 
         const sortedChannels = Object.entries(channelCounts)
-            .sort(([,a], [,b]) => b - a);
-        
+            .sort(([, a], [, b]) => b - a);
+
         const channels = sortedChannels.map(([channel]) => channel);
-        const values = sortedChannels.map(([,count]) => count);
+        const values = sortedChannels.map(([, count]) => count);
 
         const container = document.querySelector('#channelChart');
-        const maxValue = Math.max(...values);
-        const barWidth = 70;
-        const barSpacing = 30;
-        const chartHeight = 280;
-        const chartPadding = 40;
+
+        /* === Layout parameters === */
+        const barWidth = 100;                // larghezza singola barra
+        const barSpacing = 80;              // distanza fra le barre
+        const marginTop = 60;               // spazio alto (titolo ecc.)
+        const marginBottom = 150;            // spazio basso per icone + label
+        const chartHeight = 500;            // altezza totale dell’SVG
+        const chartPaddingX = 50;           // padding orizzontale interno
+
         const totalBarsWidth = channels.length * barWidth + (channels.length - 1) * barSpacing;
-        const chartWidth = Math.max(450, totalBarsWidth + (chartPadding * 2));
+        const chartWidth = Math.max(container.clientWidth || 600, totalBarsWidth + chartPaddingX * 2);
+
+        const barAreaHeight = chartHeight - marginTop - marginBottom;
+        const maxValue = Math.max(...values);
         const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1'];
 
+        /* === Build SVG === */
         let svgContent = `
-            <svg width="${chartWidth}" height="${chartHeight + 70}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
-                <defs>
-                    <style>
-                        .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #003d82; font-weight: normal; text-anchor: middle; }
-                        .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: bold; text-anchor: middle; }
-                        .chart-bar { transition: all 0.3s ease; }
-                        .chart-bar:hover { opacity: 0.8; transform: translateY(-2px); }
-                    </style>
-                </defs>`;
+            <svg width="${chartWidth}" height="${chartHeight}" viewBox="0 0 ${chartWidth} ${chartHeight}"
+                 xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;"
+                 preserveAspectRatio="xMidYMid meet">
+                <style>
+                    .chart-bar { transition: opacity 0.2s, transform 0.15s; }
+                    .chart-bar:hover { opacity: 0.8; transform: translateY(-4px); }
+                    .chart-value { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; fill: var(--primary-blue); text-anchor: middle; }
+                    .chart-label { font-family: 'Inter', sans-serif; font-size: 14px; fill: var(--primary-blue); text-anchor: middle; }
+                </style>`;
 
+        /* Center bars horizontally */
         const startX = (chartWidth - totalBarsWidth) / 2;
 
         channels.forEach((channel, index) => {
-            const barHeight = Math.max((values[index] / maxValue) * 180, 20);
+            const barHeight = Math.max((values[index] / maxValue) * barAreaHeight, 30);
             const x = startX + index * (barWidth + barSpacing);
-            const y = chartHeight - barHeight - 35;
+            const y = marginTop + (barAreaHeight - barHeight);
 
-            // Barra principale
+            // primary bar
             svgContent += `
-                <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" 
+                <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"
                       fill="${colors[index % colors.length]}" rx="4" ry="4"/>
-                <text x="${x + barWidth/2}" y="${y - 8}" class="chart-value">
-                    ${values[index]}
-                </text>`;
+                <text x="${x + barWidth/2}" y="${y - 10}" class="chart-value">${values[index]}</text>`;
 
-            // Icona e label
-            const iconY = chartHeight - 25;
+            // icon + label
+            const iconY = chartHeight - marginBottom + 30; // posiziona l’icona
             svgContent += `
-                ${getChannelIconSVG(channel, x + barWidth/2 - 8, iconY - 16, 16)}
-                <text x="${x + barWidth/2}" y="${iconY + 15}" class="chart-label">
-                    ${channel}
-                </text>`;
+                ${getChannelIconSVG(channel, x + barWidth/2 - 8, iconY - 18, 18)}
+                <text x="${x + barWidth/2}" y="${iconY + 22}" class="chart-label">${channel}</text>`;
         });
 
         svgContent += '</svg>';
         container.innerHTML = svgContent;
     }
+
 
     function generateSentimentChart() {
         const sentiments = { positive: 0, neutral: 0, negative: 0 };
@@ -1129,7 +1155,7 @@
         const values = [positivePerc, neutralPerc, negativePerc];
 
         let svgContent = `
-            <svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
+            <svg viewBox="0 0 ${svgSize} ${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;" preserveAspectRatio="xMidYMid meet">
                 <defs>
                     <style>
                         .sentiment-value { 
@@ -1574,8 +1600,7 @@
                                 <th>Commenti</th>
                                 <th>Like e Reazioni</th>
                                 <th>Condivisioni</th>
-                                <th>Link</th>
-                            </tr>
+</tr>
                         </thead>
                         <tbody>`;
 
@@ -1588,13 +1613,15 @@
                                 ${item.profileDescription ? `<br/><span style="font-size: 0.85rem; color: #666; font-weight: normal;">${item.profileDescription}</span>` : ''}
                             </td>
                             <td class="channel-cell">${channelIconHTML}${item.channel}</td>
-                            <td>${item.publishedDateFormatted}</td>
+                            <td>
+${item.url ? `<a href="${item.url}" target="_blank" rel="noopener">${item.publishedDateFormatted}</a>` : item.publishedDateFormatted}
+</td>
                             <td class="content-cell text-left">${item.content}</td>
                             <td>${formatTableValue(item.followers)}</td>
                             <td>${formatTableValue(item.comments)}</td>
                             <td>${formatTableValue(item.likes)}</td>
                             <td>${formatTableValue(item.shares)}</td>
-                            <td class="link-cell"><a href="${item.url}" target="_blank" rel="noopener">Link</a></td>
+                            
                         </tr>`;
                 });
 
@@ -1631,12 +1658,14 @@
                     channelChartClone.innerHTML = channelChartElement.outerHTML;
                 }
                 
-                const sentimentChartClone = resultsClone.querySelector('#sentimentContainer');
-                if (sentimentChartClone && sentimentChartElement) {
-                    sentimentChartClone.innerHTML = sentimentChartElement.outerHTML;
-                }
-
-                const htmlContent = `<!DOCTYPE html>
+                const sentimentChartClone  = resultsClone.querySelector('#sentimentContainer');
+if (sentimentChartClone) {
+    if (!document.querySelector('#sentimentContainer svg')) {
+        generateSentimentChart();
+    }
+    sentimentChartClone.innerHTML = document.getElementById('sentimentContainer').innerHTML;
+}
+const htmlContent = `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -1649,7 +1678,20 @@
         .data-table th { cursor: default; user-select: auto; }
         .data-table th::after { display: none; }
         .data-table th:hover { background: linear-gradient(135deg, var(--light-blue), #f0f8ff); }
-    </style>
+    
+.chart-container,
+.sentiment-container{
+    width:100%;
+    margin:0 auto;
+}
+    margin:0 auto;
+}
+.chart-container svg,
+.sentiment-container svg{
+    width:100% !important;
+    height:auto !important;
+}
+</style>
 </head>
 <body>
     <div class="container">
