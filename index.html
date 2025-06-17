@@ -244,6 +244,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            margin: 0 auto;
         }
 
         .sentiment-container {
@@ -301,14 +302,22 @@
         .data-table th {
             background: linear-gradient(135deg, var(--light-blue), #f0f8ff);
             color: var(--primary-blue);
-            font-weight: 700;
+            font-weight: bold;
             font-family: "Avenir Next LT Pro", "Inter", sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase;
             position: sticky;
             top: 0;
             z-index: 10;
             cursor: pointer;
             user-select: none;
             transition: background-color 0.2s ease;
+        }
+
+        .data-table th:first-child {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
         }
 
         .data-table th:hover {
@@ -1052,8 +1061,11 @@
                         .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 18px; fill: #003d82; font-weight: bold; }
                         .chart-bar { transition: opacity 0.3s ease; }
                         .chart-bar:hover { opacity: 0.8; }
+                        .chart-title { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                     </style>
-                </defs>`;
+                </defs>
+                <text x="${chartWidth/2}" y="25" class="chart-title">POST PER CANALE</text>
+                <g transform="translate(0, 40)">`;
 
         const startX = (chartWidth - totalBarsWidth) / 2;
 
@@ -1077,7 +1089,7 @@
                 </text>`;
         });
 
-        svgContent += '</svg>';
+        svgContent += '</g></svg>';
         container.innerHTML = svgContent;
     }
 
@@ -1123,9 +1135,11 @@
                         .sentiment-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: #003d82; font-weight: normal; }
                         .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: white; font-weight: bold; }
                         .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: #333; }
+                        .sentiment-title { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                     </style>
                 </defs>
-                <g transform="translate(${(svgSize - chartSize) / 2}, 30)">`;
+                <text x="${svgSize/2}" y="25" class="sentiment-title">ANALISI DEL SENTIMENT</text>
+                <g transform="translate(${(svgSize - chartSize) / 2}, 50)">`;
 
         let currentAngle = 0;
         values.forEach((value, index) => {
@@ -1167,7 +1181,7 @@
 
         svgContent += '</g>';
 
-        const legendY = chartSize + 120;
+        const legendY = chartSize + 140;
         const legendSpacing = 160;
         const legendStartX = (svgSize - (labels.length * legendSpacing)) / 2;
         
@@ -1365,7 +1379,7 @@
                             </style>
                         </defs>
                         <text x="400" y="30" class="title-text">POST PER CANALE</text>
-                        <g transform="translate(50, 50)">
+                        <g transform="translate(0, 50)">
                             ${channelSVG.innerHTML}
                         </g>
                     </svg>`;
@@ -1407,7 +1421,7 @@
                             </style>
                         </defs>
                         <text x="350" y="30" class="title-text">ANALISI DEL SENTIMENT</text>
-                        <g transform="translate(50, 50)">
+                        <g transform="translate(0, 50)">
                             ${sentimentSVG.innerHTML}
                         </g>
                     </svg>`;
@@ -1559,6 +1573,21 @@
                 const tableWrapper = resultsClone.querySelector('.table-wrapper');
                 if (tableWrapper) {
                     tableWrapper.innerHTML = tableHTML;
+                }
+
+                // Get the charts content for HTML export
+                const channelChartContent = document.querySelector('#channelChart').innerHTML;
+                const sentimentChartContent = document.querySelector('#sentimentContainer').innerHTML;
+                
+                // Update charts in clone
+                const channelChartClone = resultsClone.querySelector('#channelChart');
+                if (channelChartClone) {
+                    channelChartClone.innerHTML = channelChartContent;
+                }
+                
+                const sentimentChartClone = resultsClone.querySelector('#sentimentContainer');
+                if (sentimentChartClone) {
+                    sentimentChartClone.innerHTML = sentimentChartContent;
                 }
 
                 const htmlContent = `<!DOCTYPE html>
