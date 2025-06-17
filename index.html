@@ -582,6 +582,7 @@
                                 <option value="15">15 righe</option>
                                 <option value="20">20 righe</option>
                                 <option value="25">25 righe</option>
+                                <option value="all">Tutti i risultati</option>
                             </select>
                         </div>
                         <button class="btn btn-secondary" onclick="updateTable()">
@@ -999,11 +1000,11 @@
     }
 
     function renderTable() {
-        const maxRows = parseInt(document.getElementById('maxRows').value);
+        const maxRowsValue = document.getElementById('maxRows').value;
         const tableBody = document.querySelector('#dataTable tbody');
         const dataToShow = displayedData.length > 0 ? displayedData : prepareTableData();
         
-        const limitedData = dataToShow.slice(0, maxRows);
+        const limitedData = maxRowsValue === 'all' ? dataToShow : dataToShow.slice(0, parseInt(maxRowsValue));
         let tableHTML = '';
 
         limitedData.forEach(item => {
@@ -1048,13 +1049,13 @@
         const maxValue = Math.max(...values);
         const barWidth = 80;
         const barSpacing = 40;
-        const chartHeight = 350;
+        const chartHeight = 300;
         const totalBarsWidth = channels.length * barWidth + (channels.length - 1) * barSpacing;
-        const chartWidth = Math.max(600, totalBarsWidth + 100);
+        const chartWidth = Math.max(500, totalBarsWidth + 80);
         const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1'];
 
         let svgContent = `
-            <svg width="${chartWidth}" height="${chartHeight + 100}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
+            <svg width="${chartWidth}" height="${chartHeight + 80}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
                     <style>
                         .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: normal; text-anchor: middle; }
@@ -1067,9 +1068,9 @@
         const startX = (chartWidth - totalBarsWidth) / 2;
 
         channels.forEach((channel, index) => {
-            const barHeight = (values[index] / maxValue) * 250;
+            const barHeight = (values[index] / maxValue) * 200;
             const x = startX + index * (barWidth + barSpacing);
-            const y = chartHeight - barHeight - 60;
+            const y = chartHeight - barHeight - 50;
 
             svgContent += `
                 <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" 
@@ -1078,7 +1079,7 @@
                     ${values[index]}
                 </text>`;
 
-            const iconY = chartHeight - 40;
+            const iconY = chartHeight - 30;
             svgContent += `
                 ${getChannelIconSVG(channel, x + barWidth/2 - 10, iconY - 20, 20)}
                 <text x="${x + barWidth/2}" y="${iconY + 15}" class="chart-label">
@@ -1106,12 +1107,12 @@
         const negativePerc = total > 0 ? Math.round((sentiments.negative / total) * 100) : 0;
 
         const container = document.getElementById('sentimentContainer');
-        const svgSize = 450;
-        const chartSize = 300;
+        const svgSize = 400;
+        const chartSize = 250;
         const centerX = chartSize / 2;
         const centerY = chartSize / 2;
-        const radius = 120;
-        const innerRadius = 70;
+        const radius = 100;
+        const innerRadius = 60;
 
         function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
             const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
@@ -1129,12 +1130,12 @@
             <svg width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;">
                 <defs>
                     <style>
-                        .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 18px; fill: white; font-weight: bold; text-anchor: middle; }
-                        .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #333; }
-                        .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #666; }
+                        .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: white; font-weight: bold; text-anchor: middle; }
+                        .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 13px; fill: #333; }
+                        .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 11px; fill: #666; }
                     </style>
                 </defs>
-                <g transform="translate(${(svgSize - chartSize) / 2}, 30)">`;
+                <g transform="translate(${(svgSize - chartSize) / 2}, 20)">`;
 
         let currentAngle = 0;
         values.forEach((value, index) => {
@@ -1165,7 +1166,7 @@
                     const textRadius = (radius + innerRadius) / 2;
                     const textPos = polarToCartesian(centerX, centerY, textRadius, midAngle);
                     svgContent += `
-                        <text x="${textPos.x}" y="${textPos.y + 6}" class="sentiment-value">
+                        <text x="${textPos.x}" y="${textPos.y + 5}" class="sentiment-value">
                             ${value}%
                         </text>`;
                 }
@@ -1177,19 +1178,19 @@
         svgContent += '</g>';
 
         // Legenda compatta sotto il grafico
-        const legendY = chartSize + 80;
-        const legendItemWidth = 140;
+        const legendY = chartSize + 60;
+        const legendItemWidth = 120;
         const totalLegendWidth = labels.length * legendItemWidth;
         const legendStartX = (svgSize - totalLegendWidth) / 2;
         
         labels.forEach((label, index) => {
             const legendX = legendStartX + (index * legendItemWidth);
             svgContent += `
-                <circle cx="${legendX + 15}" cy="${legendY}" r="8" fill="${colors[index]}"/>
-                <text x="${legendX + 30}" y="${legendY - 8}" class="legend-item">
+                <circle cx="${legendX + 12}" cy="${legendY}" r="7" fill="${colors[index]}"/>
+                <text x="${legendX + 25}" y="${legendY - 6}" class="legend-item">
                     ${label}
                 </text>
-                <text x="${legendX + 30}" y="${legendY + 8}" class="legend-label">
+                <text x="${legendX + 25}" y="${legendY + 6}" class="legend-label">
                     ${values[index]}%
                 </text>`;
         });
@@ -1372,7 +1373,7 @@
                 }
 
                 const svgContent = `
-                    <svg width="700" height="550" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="600" height="450" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <style>
                                 .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: normal; text-anchor: middle; }
@@ -1382,7 +1383,7 @@
                                 .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                             </style>
                         </defs>
-                        <text x="350" y="30" class="title-text">POST PER CANALE</text>
+                        <text x="300" y="30" class="title-text">POST PER CANALE</text>
                         <g transform="translate(50, 60)">
                             ${channelSVG.innerHTML}
                         </g>
@@ -1418,16 +1419,16 @@
                 }
 
                 const svgContent = `
-                    <svg width="500" height="500" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="450" height="450" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <style>
-                                .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 18px; fill: white; font-weight: bold; text-anchor: middle; }
-                                .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #333; }
-                                .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #666; }
+                                .sentiment-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 16px; fill: white; font-weight: bold; text-anchor: middle; }
+                                .legend-item { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 13px; fill: #333; }
+                                .legend-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 11px; fill: #666; }
                                 .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 24px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                             </style>
                         </defs>
-                        <text x="250" y="30" class="title-text">ANALISI DEL SENTIMENT</text>
+                        <text x="225" y="30" class="title-text">ANALISI DEL SENTIMENT</text>
                         <g transform="translate(25, 60)">
                             ${sentimentSVG.innerHTML}
                         </g>
@@ -1518,9 +1519,9 @@
         setTimeout(() => {
             try {
                 // Get current displayed data and max rows setting
-                const maxRows = parseInt(document.getElementById('maxRows').value);
+                const maxRowsValue = document.getElementById('maxRows').value;
                 const tableData = displayedData.length > 0 ? displayedData : prepareTableData();
-                const limitedData = tableData.slice(0, maxRows);
+                const limitedData = maxRowsValue === 'all' ? tableData : tableData.slice(0, parseInt(maxRowsValue));
 
                 // Generate table HTML with current data
                 let tableHTML = `
