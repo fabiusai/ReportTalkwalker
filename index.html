@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talkwalker Report Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
+    <style>        .data-table th.sortable::after, .data-table th.sort-asc::after, .data-table th.sort-desc::after { display:none !important; }
+
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         :root {
@@ -326,20 +327,7 @@
         }
 
 
-        .data-table th {
-            background: linear-gradient(135deg, var(--light-blue), #f0f8ff);
-            color: var(--primary-blue);
-            font-weight: bold;
-            font-family: "Avenir Next LT Pro", "Inter", sans-serif;
-            font-size: 1rem;
-            text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            cursor: pointer;
-            user-select: none;
-            transition: background-color 0.2s ease;
-        }
+        
 
         .data-table th:first-child {
             width: 180px;
@@ -772,13 +760,24 @@
         return channelMap[cleanUrl] || cleanUrl.charAt(0).toUpperCase() + cleanUrl.slice(1) || 'Altro';
     }
 
+    
+    
     function formatNumber(num) {
+        // Gestione abbreviazioni con virgola decimale e suffissi K / M (italian style)
         if (num >= 1000000) {
-            return (num / 1000000).toFixed(1) + 'M';
+            const millions = num / 1000000;
+            const rounded = millions >= 10 ? Math.round(millions).toString()
+                                            : millions.toFixed(2);
+            return rounded.replace('.', ',').replace(/,00$/, '') + 'M';
         } else if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
+            if (num === 1000) return 'K';
+            const thousands = num / 1000;
+            const rounded = thousands >= 10 ? Math.round(thousands).toString()
+                                             : thousands.toFixed(2);
+            return rounded.replace('.', ',').replace(/,00$/, '') + 'K';
+        } else {
+            return num.toString().replace('.', ',');
         }
-        return num.toString();
     }
 
     function formatTableValue(value) {
@@ -1068,8 +1067,8 @@ function generateChannelChart() {
         const container = document.querySelector('#channelChart');
 
         /* === Layout parameters === */
-        const barWidth = 100;                // larghezza singola barra
-        const barSpacing = 80;              // distanza fra le barre
+        const barWidth = 80;                // larghezza singola barra
+        const barSpacing = 10;              // distanza fra le barre
         const marginTop = 60;               // spazio alto (titolo ecc.)
         const marginBottom = 150;            // spazio basso per icone + label
         const chartHeight = 500;            // altezza totale dell’SVG
@@ -1106,7 +1105,7 @@ function generateChannelChart() {
             svgContent += `
                 <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"
                       fill="${colors[index % colors.length]}" rx="4" ry="4"/>
-                <text x="${x + barWidth/2}" y="${y - 10}" class="chart-value">${values[index]}</text>`;
+                <text x="${x + barWidth/2}" y="${y - 10}" class="chart-value">${formatNumber(values[index])}</text>`;
 
             // icon + label
             const iconY = chartHeight - marginBottom + 30; // posiziona l’icona
@@ -1675,8 +1674,8 @@ const htmlContent = `<!DOCTYPE html>
         ${document.querySelector('style').innerHTML}
         .header { display: none; }
         .upload-section { display: none; }
-        .data-table th { cursor: default; user-select: auto; }
-        .data-table th::after { display: none; }
+        
+        
         .data-table th:hover { background: linear-gradient(135deg, var(--light-blue), #f0f8ff); }
     
 .chart-container,
@@ -1697,6 +1696,28 @@ const htmlContent = `<!DOCTYPE html>
     <div class="container">
         ${resultsClone.innerHTML}
     </div>
+
+        <script>
+document.querySelectorAll('#dataTable th').forEach((th, idx) => {
+  if (!th.classList.contains('sortable')) return;
+  th.addEventListener('click', () => {
+    const tbody = th.closest('table').tBodies[0];
+    const rows  = Array.from(tbody.rows);
+    const asc   = !th.classList.toggle('sort-asc');
+    th.classList.toggle('sort-desc', asc);
+    rows.sort((a,b) => {
+      const get = (tr) => tr.cells[idx].innerText.trim();
+      const A = get(a), B = get(b),
+            nA = parseFloat(A.replace(/[^\d.-]/g,'')),
+            nB = parseFloat(B.replace(/[^\d.-]/g,''));
+      return isNaN(nA)||isNaN(nB)
+             ? (asc ? A.localeCompare(B) : B.localeCompare(A))
+             : (asc ? nA-nB : nB-nA);
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+        </scr${''}ipt>
 </body>
 </html>`;
 
