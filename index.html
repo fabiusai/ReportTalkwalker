@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talkwalker Report Generator</title>
-<link rel="icon" href="favicon.ico" type="image/png" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>        .data-table th.sortable::after, .data-table th.sort-asc::after, .data-table th.sort-desc::after { display:none !important; }
 
@@ -327,9 +326,6 @@
           transform: translateY(0);
         }
 
-
-        
-
         .data-table th:first-child {
             width: 180px;
             min-width: 180px;
@@ -444,10 +440,6 @@
             display: none;
         }
 
-        
-
-        
-
         .sentiment-note {
             font-size: 0.85rem;
             color: var(--neutral-gray);
@@ -506,14 +498,14 @@
             }
         }
     
-/* Poste table header styling */
+/* ——— Custom patch: Blu‑Poste table header ——— */
 .data-table th{
   background:#1d48b4;
   color:#ffffff;
   font-family:"Avenir Next LT Pro","Inter",sans-serif;
-  font-weight:300;
+  font-weight:300;          /* Light */
   text-transform:uppercase;
-  font-size:1rem;
+  font-size:1rem;           /* slightly larger than row text */
 }
 .data-table th:hover{
   background:#1d48b4;
@@ -590,25 +582,26 @@
                 </div>
             </div>
 
+            <div class="table-controls">
+                <div class="rows-selector">
+                    <label for="maxRows">Mostra:</label>
+                    <select id="maxRows" onchange="updateTable()">
+                        <option value="5">5 righe</option>
+                        <option value="10" selected>10 righe</option>
+                        <option value="15">15 righe</option>
+                        <option value="20">20 righe</option>
+                        <option value="25">25 righe</option>
+                        <option value="all">Tutti i risultati</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="updateTable()">
+                    Aggiorna Tabella
+                </button>
+            </div>
+
             <div class="card">
                 <div class="card-header">Post di Maggiore Rilievo</div>
                 <div class="card-body">
-                    <div class="table-controls">
-                        <div class="rows-selector">
-                            <label for="maxRows">Mostra:</label>
-                            <select id="maxRows" onchange="updateTable()">
-                                <option value="5">5 righe</option>
-                                <option value="10" selected>10 righe</option>
-                                <option value="15">15 righe</option>
-                                <option value="20">20 righe</option>
-                                <option value="25">25 righe</option>
-                                <option value="all">Tutti i risultati</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-secondary" onclick="updateTable()">
-                            Aggiorna Tabella
-                        </button>
-                    </div>
                     <div class="table-wrapper">
                         <table class="data-table" id="dataTable">
                             <thead>
@@ -621,7 +614,7 @@
                                     <th class="sortable" onclick="sortTable(5)">Commenti</th>
                                     <th class="sortable" onclick="sortTable(6)">Like e Reazioni</th>
                                     <th class="sortable" onclick="sortTable(7)">Condivisioni</th>
-</tr>
+                                </tr>
                             </thead>
                             <tbody>
                             </tbody>
@@ -774,10 +767,7 @@
         return channelMap[cleanUrl] || cleanUrl.charAt(0).toUpperCase() + cleanUrl.slice(1) || 'Altro';
     }
 
-    
-    
     function formatNumber(num) {
-        // Gestione abbreviazioni con virgola decimale e suffissi K / M (italian style)
         if (num >= 1000000) {
             const millions = num / 1000000;
             const rounded = millions >= 10 ? Math.round(millions).toString()
@@ -1064,8 +1054,7 @@ ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener">${item.publis
         tableBody.innerHTML = tableHTML;
     }
 
-    
-function generateChannelChart() {
+    function generateChannelChart() {
         const channelCounts = {};
         currentData.forEach(row => {
             const channel = getChannelName(row.domain_url || '');
@@ -1131,7 +1120,6 @@ function generateChannelChart() {
         svgContent += '</svg>';
         container.innerHTML = svgContent;
     }
-
 
     function generateSentimentChart() {
         const sentiments = { positive: 0, neutral: 0, negative: 0 };
@@ -1425,28 +1413,66 @@ function generateChannelChart() {
         
         setTimeout(() => {
             try {
-                const channelSVG = document.querySelector('#channelChart svg');
-                
-                if (!channelSVG) {
-                    throw new Error('Grafico canali non trovato');
-                }
+                const channelCounts = {};
+                currentData.forEach(row => {
+                    const channel = getChannelName(row.domain_url || '');
+                    channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+                });
 
-                const svgContent = `
-                    <svg width="550" height="400" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <style>
-                                .chart-label { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 12px; fill: #003d82; font-weight: normal; text-anchor: middle; }
-                                .chart-value { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 14px; fill: #003d82; font-weight: bold; text-anchor: middle; }
-                                .chart-bar { transition: all 0.3s ease; }
-                                .chart-bar:hover { opacity: 0.8; }
-                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 20px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
-                            </style>
-                        </defs>
-                        <text x="275" y="25" class="title-text">POST PER CANALE</text>
-                        <g transform="translate(40, 45)">
-                            ${channelSVG.innerHTML.replace(/<style[^>]*>[\s\S]*?<\/style>/,"")}
-                        </g>
-                    </svg>`;
+                const sortedChannels = Object.entries(channelCounts)
+                    .sort(([, a], [, b]) => b - a);
+
+                const channels = sortedChannels.map(([channel]) => channel);
+                const values = sortedChannels.map(([, count]) => count);
+
+                const chartWidth = 800;
+                const chartHeight = 600;
+                const barWidth = 80;
+                const barSpacing = 10;
+                const marginTop = 100;
+                const marginBottom = 150;
+                const barAreaHeight = chartHeight - marginTop - marginBottom;
+                const maxValue = Math.max(...values);
+                const colors = ['#003d82', '#0056b3', '#ffd100', '#28a745', '#dc3545', '#6f42c1'];
+                const totalBarsWidth = channels.length * barWidth + (channels.length - 1) * barSpacing;
+                const startX = (chartWidth - totalBarsWidth) / 2;
+
+                let svgContent = `
+                    <svg width="${chartWidth}" height="${chartHeight}" viewBox="0 0 ${chartWidth} ${chartHeight}"
+                         xmlns="http://www.w3.org/2000/svg" style="margin:0 auto;display:block;"
+                         preserveAspectRatio="xMidYMid meet">
+                        <style>
+                            .chart-title {
+                                font-family: 'Avenir Next LT Pro', Arial, sans-serif;
+                                font-size: 24px;
+                                font-weight: 300;
+                                fill: #1d48b4;
+                                text-anchor: middle;
+                                text-transform: uppercase;
+                            }
+                            .chart-bar { transition: opacity 0.2s, transform 0.15s; }
+                            .chart-value { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; fill: var(--primary-blue); text-anchor: middle; }
+                            .chart-label { font-family: 'Inter', sans-serif; font-size: 14px; fill: var(--primary-blue); text-anchor: middle; }
+                        </style>
+                        <text x="${chartWidth/2}" y="40" class="chart-title">POST PER CANALE</text>`;
+
+                channels.forEach((channel, index) => {
+                    const barHeight = Math.max((values[index] / maxValue) * barAreaHeight, 30);
+                    const x = startX + index * (barWidth + barSpacing);
+                    const y = marginTop + (barAreaHeight - barHeight);
+
+                    svgContent += `
+                        <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}"
+                              fill="${colors[index % colors.length]}" rx="4" ry="4"/>
+                        <text x="${x + barWidth/2}" y="${y - 10}" class="chart-value">${formatNumber(values[index])}</text>`;
+
+                    const iconY = chartHeight - marginBottom + 30;
+                    svgContent += `
+                        ${getChannelIconSVG(channel, x + barWidth/2 - 8, iconY - 18, 18)}
+                        <text x="${x + barWidth/2}" y="${iconY + 22}" class="chart-label">${channel}</text>`;
+                });
+
+                svgContent += '</svg>';
 
                 const argomento = document.getElementById('argomento').value || 'report';
                 downloadFile(svgContent, `grafico-canali-talkwalker-${argomento.replace(/\s+/g, '-').toLowerCase()}.svg`, 'image/svg+xml');
@@ -1471,45 +1497,130 @@ function generateChannelChart() {
         
         setTimeout(() => {
             try {
-                const sentimentSVG = document.querySelector('#sentimentContainer svg');
+                const sentiments = { positive: 0, neutral: 0, negative: 0 };
                 
-                if (!sentimentSVG) {
-                    throw new Error('Grafico sentiment non trovato');
+                currentData.forEach(row => {
+                    const sentiment = parseFloat(row.sentiment) || 0;
+                    if (sentiment > 0) sentiments.positive++;
+                    else if (sentiment < 0) sentiments.negative++;
+                    else sentiments.neutral++;
+                });
+
+                const total = sentiments.positive + sentiments.neutral + sentiments.negative;
+                const positivePerc = total > 0 ? Math.round((sentiments.positive / total) * 100) : 0;
+                const neutralPerc = total > 0 ? Math.round((sentiments.neutral / total) * 100) : 0;
+                const negativePerc = total > 0 ? Math.round((sentiments.negative / total) * 100) : 0;
+
+                const svgSize = 600;
+                const chartRadius = 120;
+                const innerRadius = 70;
+                const centerX = svgSize / 2;
+                const centerY = svgSize / 2;
+
+                function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+                    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+                    return {
+                        x: centerX + (radius * Math.cos(angleInRadians)),
+                        y: centerY + (radius * Math.sin(angleInRadians))
+                    };
                 }
 
-                const svgContent = `
-                    <svg width="420" height="420" xmlns="http://www.w3.org/2000/svg">
+                const colors = ['#28a745', '#ffc107', '#dc3545'];
+                const labels = ['Positivo', 'Neutro', 'Negativo'];
+                const values = [positivePerc, neutralPerc, negativePerc];
+
+                let svgContent = `
+                    <svg viewBox="0 0 ${svgSize} ${svgSize}" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto; display: block;" preserveAspectRatio="xMidYMid meet">
                         <defs>
                             <style>
+                                .chart-title {
+                                    font-family: 'Avenir Next LT Pro', Arial, sans-serif;
+                                    font-size: 24px;
+                                    font-weight: 300;
+                                    fill: #1d48b4;
+                                    text-anchor: middle;
+                                    text-transform: uppercase;
+                                }
                                 .sentiment-value { 
                                     font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
-                                    font-size: 14px; 
+                                    font-size: 16px; 
                                     fill: white; 
                                     font-weight: bold; 
                                     text-anchor: middle; 
                                 }
                                 .legend-item { 
                                     font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
-                                    font-size: 12px; 
+                                    font-size: 14px; 
                                     fill: #333; 
                                     font-weight: 500;
                                 }
                                 .legend-perc { 
                                     font-family: 'Avenir Next LT Pro', Arial, sans-serif; 
-                                    font-size: 11px; 
+                                    font-size: 12px; 
                                     fill: #666; 
                                 }
                                 .donut-segment {
                                     transition: all 0.3s ease;
                                 }
-                                .title-text { font-family: 'Avenir Next LT Pro', Arial, sans-serif; font-size: 20px; fill: #003d82; font-weight: normal; text-anchor: middle; text-transform: uppercase; }
                             </style>
                         </defs>
-                        <text x="210" y="25" class="title-text">ANALISI DEL SENTIMENT</text>
-                        <g transform="translate(20, 45)">
-                            ${sentimentSVG.innerHTML}
-                        </g>
-                    </svg>`;
+                        <text x="${svgSize/2}" y="50" class="chart-title">ANALISI DEL SENTIMENT</text>`;
+
+                let currentAngle = 0;
+                values.forEach((value, index) => {
+                    if (value > 0) {
+                        const segmentAngle = (value / 100) * 360;
+                        const startAngle = currentAngle;
+                        const endAngle = currentAngle + segmentAngle;
+                        
+                        const outerStart = polarToCartesian(centerX, centerY, chartRadius, startAngle);
+                        const outerEnd = polarToCartesian(centerX, centerY, chartRadius, endAngle);
+                        const innerStart = polarToCartesian(centerX, centerY, innerRadius, startAngle);
+                        const innerEnd = polarToCartesian(centerX, centerY, innerRadius, endAngle);
+                        
+                        const largeArc = segmentAngle > 180 ? 1 : 0;
+                        
+                        const pathData = [
+                            `M ${outerStart.x} ${outerStart.y}`,
+                            `A ${chartRadius} ${chartRadius} 0 ${largeArc} 1 ${outerEnd.x} ${outerEnd.y}`,
+                            `L ${innerEnd.x} ${innerEnd.y}`,
+                            `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
+                            'Z'
+                        ].join(' ');
+                        
+                        svgContent += `<path class="donut-segment" d="${pathData}" fill="${colors[index]}" stroke="white" stroke-width="2"/>`;
+
+                        if (value > 10) {
+                            const midAngle = startAngle + segmentAngle / 2;
+                            const textRadius = (chartRadius + innerRadius) / 2;
+                            const textPos = polarToCartesian(centerX, centerY, textRadius, midAngle);
+                            svgContent += `
+                                <text x="${textPos.x}" y="${textPos.y + 5}" class="sentiment-value">
+                                    ${value}%
+                                </text>`;
+                        }
+                        
+                        currentAngle += segmentAngle;
+                    }
+                });
+
+                const legendY = svgSize - 100;
+                const legendSpacing = 150;
+                const legendStartX = (svgSize - (labels.length * legendSpacing)) / 2;
+                
+                labels.forEach((label, index) => {
+                    const legendX = legendStartX + (index * legendSpacing);
+                    svgContent += `
+                        <circle cx="${legendX + 8}" cy="${legendY}" r="8" fill="${colors[index]}"/>
+                        <text x="${legendX + 25}" y="${legendY - 5}" class="legend-item">
+                            ${label}
+                        </text>
+                        <text x="${legendX + 25}" y="${legendY + 10}" class="legend-perc">
+                            ${values[index]}%
+                        </text>`;
+                });
+
+                svgContent += '</svg>';
 
                 const argomento = document.getElementById('argomento').value || 'report';
                 downloadFile(svgContent, `grafico-sentiment-talkwalker-${argomento.replace(/\s+/g, '-').toLowerCase()}.svg`, 'image/svg+xml');
@@ -1595,28 +1706,21 @@ function generateChannelChart() {
         
         setTimeout(() => {
             try {
-                // Get current displayed data and max rows setting
-                const maxRowsValue = document.getElementById('maxRows').value;
+                // Get current report data
+                const argomento = document.getElementById('argomento').value || 'report';
+                const analysisTitle = document.getElementById('analysisTitle').textContent;
+                const analysisSubtitle = document.getElementById('analysisSubtitle').textContent;
+                const metricsHTML = document.getElementById('metricsGrid').innerHTML;
+                const channelChartHTML = document.getElementById('channelChart').innerHTML;
+                const sentimentChartHTML = document.getElementById('sentimentContainer').innerHTML;
+                
+                // Get table data
                 const tableData = displayedData.length > 0 ? displayedData : prepareTableData();
+                const maxRowsValue = document.getElementById('maxRows').value;
                 const limitedData = maxRowsValue === 'all' ? tableData : tableData.slice(0, parseInt(maxRowsValue));
-
-                // Generate table HTML with current data
-                let tableHTML = `
-                    <table class="data-table" id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>Nome Profilo</th>
-                                <th>Canale</th>
-                                <th>Data e Ora</th>
-                                <th>Contenuto</th>
-                                <th>Followers</th>
-                                <th>Commenti</th>
-                                <th>Like e Reazioni</th>
-                                <th>Condivisioni</th>
-</tr>
-                        </thead>
-                        <tbody>`;
-
+                
+                // Generate table HTML
+                let tableHTML = '';
                 limitedData.forEach(item => {
                     const channelIconHTML = getChannelIconHTML(item.channel);
                     tableHTML += `
@@ -1634,51 +1738,11 @@ ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener">${item.publis
                             <td>${formatTableValue(item.comments)}</td>
                             <td>${formatTableValue(item.likes)}</td>
                             <td>${formatTableValue(item.shares)}</td>
-                            
                         </tr>`;
                 });
 
-                tableHTML += `
-                        </tbody>
-                    </table>`;
-
-                const argomento = document.getElementById('argomento').value || 'report';
-                const resultsElement = document.getElementById('results');
-                
-                // Clone the results content
-                const resultsClone = resultsElement.cloneNode(true);
-                
-                // Remove export section and table controls
-                const exportSection = resultsClone.querySelector('.card:last-child');
-                if (exportSection) exportSection.remove();
-                
-                const tableControls = resultsClone.querySelector('.table-controls');
-                if (tableControls) tableControls.remove();
-
-                // Replace table with current view
-                const tableWrapper = resultsClone.querySelector('.table-wrapper');
-                if (tableWrapper) {
-                    tableWrapper.innerHTML = tableHTML;
-                }
-
-                // Assicurati che entrambi i grafici siano inclusi nell'HTML esportato
-                const channelChartElement = document.querySelector('#channelChart svg');
-                const sentimentChartElement = document.querySelector('#sentimentContainer svg');
-                
-                // Update charts in clone with complete SVG
-                const channelChartClone = resultsClone.querySelector('#channelChart');
-                if (channelChartClone && channelChartElement) {
-                    channelChartClone.innerHTML = channelChartElement.outerHTML;
-                }
-                
-                const sentimentChartClone  = resultsClone.querySelector('#sentimentContainer');
-if (sentimentChartClone) {
-    if (!document.querySelector('#sentimentContainer svg')) {
-        generateSentimentChart();
-    }
-    sentimentChartClone.innerHTML = document.getElementById('sentimentContainer').innerHTML;
-}
-const htmlContent = `<!DOCTYPE html>
+                // Create the HTML document
+                const htmlContent = `<!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
@@ -1686,52 +1750,83 @@ const htmlContent = `<!DOCTYPE html>
     <title>Report Talkwalker - ${argomento}</title>
     <style>
         ${document.querySelector('style').innerHTML}
-        .header { display: none; }
-        .upload-section { display: none; }
-        
+        .header, .upload-section, .table-controls, .export-section { display: none; }
         
         .data-table th:hover { background: linear-gradient(135deg, var(--light-blue), #f0f8ff); }
-    
-.chart-container,
-.sentiment-container{
-    width:100%;
-    margin:0 auto;
-}
-    margin:0 auto;
-}
-.chart-container svg,
-.sentiment-container svg{
-    width:100% !important;
-    height:auto !important;
-}
-</style>
+        
+        .chart-container, .sentiment-container {
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .chart-container svg, .sentiment-container svg {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        ${resultsClone.innerHTML}
-    </div>
+        <div class="analysis-header">
+            <h2 class="analysis-title">${analysisTitle}</h2>
+            <p class="analysis-subtitle">${analysisSubtitle}</p>
+        </div>
 
-        <script>
-document.querySelectorAll('#dataTable th').forEach((th, idx) => {
-  if (!th.classList.contains('sortable')) return;
-  th.addEventListener('click', () => {
-    const tbody = th.closest('table').tBodies[0];
-    const rows  = Array.from(tbody.rows);
-    const asc   = !th.classList.toggle('sort-asc');
-    th.classList.toggle('sort-desc', asc);
-    rows.sort((a,b) => {
-      const get = (tr) => tr.cells[idx].innerText.trim();
-      const A = get(a), B = get(b),
-            nA = parseFloat(A.replace(/[^\d.-]/g,'')),
-            nB = parseFloat(B.replace(/[^\d.-]/g,''));
-      return isNaN(nA)||isNaN(nB)
-             ? (asc ? A.localeCompare(B) : B.localeCompare(A))
-             : (asc ? nA-nB : nB-nA);
-    });
-    rows.forEach(r => tbody.appendChild(r));
-  });
-});
-        </scr${''}ipt>
+        <div class="card">
+            <div class="card-header">Metriche Generali</div>
+            <div class="card-body">
+                <div class="metrics-grid">
+                    ${metricsHTML}
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="card">
+                <div class="card-header">Post per Canale</div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        ${channelChartHTML}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Analisi del Sentiment</div>
+                <div class="card-body">
+                    <div class="sentiment-container">
+                        ${sentimentChartHTML}
+                    </div>
+                    <p class="sentiment-note">Fonte dati: Talkwalker - Sentiment calcolato dalla piattaforma in base al «tono» generale del contenuto.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Post di Maggiore Rilievo</div>
+            <div class="card-body">
+                <div class="table-wrapper">
+                    <table class="data-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Nome Profilo</th>
+                                <th>Canale</th>
+                                <th>Data e Ora</th>
+                                <th>Contenuto</th>
+                                <th>Followers</th>
+                                <th>Commenti</th>
+                                <th>Like e Reazioni</th>
+                                <th>Condivisioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableHTML}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>`;
 
@@ -1833,66 +1928,6 @@ document.querySelectorAll('#dataTable th').forEach((th, idx) => {
     });
 
     console.log('🚀 Talkwalker Report Generator caricato con successo!');
-
-    /**
-     * Esporta la pagina in HTML statico contenendo SOLO:
-     *  1) Titolo “Analisi social …”
-     *  2) Card “Metriche Generali”
-     *  3) Rigone con i grafici “Post per Canale” e “Analisi del Sentiment”
-     *  4) Card “Post di Maggiore Rilievo” con il numero di righe attualmente mostrato
-     *
-     * Non viene incluso nient’altro (upload, pulsanti, card di esportazione, script ecc.).
-     */
-    function exportHTML () {
-      /* --- 1. Verifiche preliminari ---------------------------------------- */
-      const resultsEl = document.getElementById('results');
-      if (!resultsEl || resultsEl.style.display === 'none') {
-        alert('Prima genera il report, poi potrai esportarlo.');
-        return;
-      }
-
-      /* --- 2. Clona SOLO la sezione già popolata --------------------------- */
-      const exportRoot = resultsEl.cloneNode(true);         // clona senza toccare il DOM vivo
-
-      /* 2a. Elimina la card “Esportazione Dati” (non deve comparire) */
-      const cards = Array.from(exportRoot.querySelectorAll('.card'));
-      cards.forEach(card => {
-        const header = card.querySelector('.card-header');
-        if (header && /esportazione dati/i.test(header.textContent)) {
-          card.remove();          // rimuove l’intera card
-        }
-      });
-
-      /* 2b. Rimuovi eventuali script annidati (in HTML statico non servono) */
-      exportRoot.querySelectorAll('script').forEach(s => s.remove());
-
-      /* --- 3. Recupera lo stile (font + CSS inline) ----------------------- */
-      const fontLink = document.querySelector('link[href*="fonts.googleapis.com"]')?.outerHTML || '';
-      const styleTag = document.querySelector('head > style')?.innerHTML || '';
-
-      /* --- 4. Costruisci la pagina minimale ------------------------------- */
-      const htmlString = `
-<!DOCTYPE html>
-<html lang="it">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>${document.title} – Export</title>
-    ${fontLink}
-    <style>${styleTag}</style>
-  </head>
-  <body>
-    <div class="container">
-      ${exportRoot.innerHTML.trim()}
-    </div>
-  </body>
-</html>`.trim();
-
-      /* --- 5. Download ----------------------------------------------------- */
-      const timestamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-      downloadFile(htmlString, `report_${timestamp}.html`, 'text/html');
-    }
-
 </script>
 </body>
 </html>
