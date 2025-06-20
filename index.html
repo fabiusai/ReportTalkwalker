@@ -505,7 +505,20 @@
                 font-size: 0.8rem;
             }
         }
-    </style>
+    
+/* Poste table header styling */
+.data-table th{
+  background:#1d48b4;
+  color:#ffffff;
+  font-family:"Avenir Next LT Pro","Inter",sans-serif;
+  font-weight:300;
+  text-transform:uppercase;
+  font-size:1rem;
+}
+.data-table th:hover{
+  background:#1d48b4;
+}
+</style>
 </head>
 <body>
 
@@ -1431,7 +1444,7 @@ function generateChannelChart() {
                         </defs>
                         <text x="275" y="25" class="title-text">POST PER CANALE</text>
                         <g transform="translate(40, 45)">
-                            ${channelSVG.innerHTML}
+                            ${channelSVG.innerHTML.replace(/<style[^>]*>[\s\S]*?<\/style>/,"")}
                         </g>
                     </svg>`;
 
